@@ -1,8 +1,9 @@
 package com.bernerus.homeapp.controller;
 
-import com.bernerus.smartmirror.model.zwave.HttpClientConfig;
-import com.bernerus.smartmirror.model.zwave.RGBColor;
-import com.bernerus.smartmirror.model.zwave.RazberryWsNotification;
+import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
+import com.bernerus.homeapp.model.HttpClientConfig;
+import com.bernerus.homeapp.model.RGBColor;
+import com.bernerus.homeapp.model.RazberryWsNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,6 +1,5 @@
-package com.bernerus.smartmirror;
+package com.bernerus.homeapp;
 
-import com.bernerus.smartmirror.controller.WebSocketHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -13,20 +12,16 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
-import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import org.springframework.web.socket.server.standard.ServletServerContainerFactoryBean;
-import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
 @SpringBootApplication
 @EnableWebSocket
 @ComponentScan
-public class Application extends SpringBootServletInitializer implements WebSocketConfigurer {
+public class Application extends SpringBootServletInitializer {
   private static final Logger log = LoggerFactory.getLogger(Application.class);
 
-  @Override
-  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-    registry.addHandler(myHandler(), "/transportsHandler");
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
   }
 
   @Bean
@@ -41,17 +36,6 @@ public class Application extends SpringBootServletInitializer implements WebSock
     return factory;
   }
 
-//  @Override
-//  public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//    registry.addHandler(new WebSocketHandler(), "/transportsHandler")
-//      .addInterceptors(new HttpSessionHandshakeInterceptor());
-//  }
-
-  @Bean
-  public WebSocketHandler myHandler() {
-    return new WebSocketHandler();
-  }
-
   @Bean
   public ServletServerContainerFactoryBean createWebSocketContainer() {
     ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();
@@ -64,10 +48,6 @@ public class Application extends SpringBootServletInitializer implements WebSock
   protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
 
     return application.sources(Application.class);
-  }
-
-  public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
   }
 
 }

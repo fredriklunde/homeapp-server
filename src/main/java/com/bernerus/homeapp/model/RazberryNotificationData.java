@@ -1,4 +1,4 @@
-package com.bernerus.smartmirror.model.zwave;
+package com.bernerus.homeapp.model;
 
 /**
  * Created by andreas on 21/02/17.

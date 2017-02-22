@@ -1,7 +1,7 @@
-package com.bernerus.smartmirror.controller.zwave.http;
+package com.bernerus.homeapp.controller.http;
 
-import com.bernerus.smartmirror.model.zwave.HttpClientConfig;
-import com.bernerus.smartmirror.model.zwave.RGBColor;
+import com.bernerus.homeapp.model.HttpClientConfig;
+import com.bernerus.homeapp.model.RGBColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;

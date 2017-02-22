@@ -1,6 +1,6 @@
 package com.bernerus.homeapp.controller;
 
-import com.bernerus.smartmirror.model.zwave.RazberryWsNotification;
+import com.bernerus.homeapp.model.RazberryWsNotification;
 
 /**
  * Created by andreas on 21/02/17.

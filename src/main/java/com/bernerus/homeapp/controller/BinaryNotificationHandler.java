@@ -1,6 +1,6 @@
 package com.bernerus.homeapp.controller;
 
-import com.bernerus.smartmirror.model.zwave.RazberryWsNotification;
+import com.bernerus.homeapp.model.RazberryWsNotification;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
