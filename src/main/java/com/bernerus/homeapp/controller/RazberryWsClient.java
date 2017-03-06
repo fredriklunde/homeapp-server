@@ -1,14 +1,16 @@
 package com.bernerus.homeapp.controller;
 
+import com.bernerus.homeapp.config.UserSettings;
 import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
-import com.bernerus.homeapp.model.HttpClientConfig;
+import com.bernerus.homeapp.controller.http.SmartMirrorHttpClient;
+import com.bernerus.homeapp.model.NoptificationHandlerHashMap;
 import com.bernerus.homeapp.model.RGBColor;
+import com.bernerus.homeapp.model.RazberryNotificationData;
 import com.bernerus.homeapp.model.RazberryWsNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
@@ -23,8 +25,17 @@ import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_0;
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_3;
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_B;
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_1;
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_2;
+import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_W;
+import static com.bernerus.homeapp.config.Config.BEDBOX_RGB_LIGHTS;
+import static com.bernerus.homeapp.config.Config.BIG_BEDBOX_SENSOR;
+import static com.bernerus.homeapp.config.Config.HALL_MOVEMENT_SENSOR;
 
 /**
  * Created by andreas on 21/02/17.
@@ -33,55 +44,63 @@ import java.util.Map;
 @ClientEndpoint
 public class RazberryWsClient extends TextWebSocketHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RazberryWsClient.class);
-  private static final String BIG_BEDBOX_SENSOR = "ZWayVDev_zway_5-0-48-1";
-  private static final String BEDBOX_RGB_LIGHTS = "ZWayVDev_zway_11-0-51-rgb";
-
+  private final SmartMirrorHttpClient mirrorHttpClient;
   private Session userSession = null;
-  private Map<String, NotificationHandler> handlers = new HashMap<>();
+  private NoptificationHandlerHashMap handlers = new NoptificationHandlerHashMap();
   private DefaultNotificationHandler defaultNotificationHandler = new DefaultNotificationHandler(this::logNoHandler);
-
   private RazberryRgbHttpClient bedboxRgbHttpClient;
-
-  private HttpClientConfig clientConfig;
+  private UserSettings userSettings;
 
   @Autowired
-  public RazberryWsClient(Environment env) {
-    String host = env.getProperty("razberry.host");
-    String port = env.getProperty("razberry.port");
-    String username = env.getProperty("razberry.user");
-    String password = env.getProperty("razberry.password");
-    this.clientConfig = new HttpClientConfig(host, port, username, password);
+  public RazberryWsClient(UserSettings userSettings) {
+    this.userSettings = userSettings;
 
-    this.bedboxRgbHttpClient = new RazberryRgbHttpClient(clientConfig, BEDBOX_RGB_LIGHTS);
+    this.mirrorHttpClient = new SmartMirrorHttpClient(userSettings.getMirrorHttpClientConfig());
+    this.bedboxRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
 
     handlers.put(BIG_BEDBOX_SENSOR, new BinaryNotificationHandler(this::bigBedBoxOpen, this::bigBedBoxClose));
+    handlers.put(HALL_MOVEMENT_SENSOR, new BinaryNotificationHandler(this::hallMovement, this::hallNoMovement));
+    handlers.put(Arrays.asList(BEDBOX_DIMMER_0, BEDBOX_DIMMER_1, BEDBOX_DIMMER_2, BEDBOX_DIMMER_3, BEDBOX_DIMMER_B, BEDBOX_DIMMER_W),
+      new DefaultNotificationHandler(this::doNothing));
   }
 
   @PostConstruct
   public void init() {
     try {
       WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-      URI endpointURI = URI.create("ws://" + clientConfig.getHost() + ":" + clientConfig.getPort());
+      URI endpointURI = URI.create("ws://" + userSettings.getRazberryHttpClientConfig().getHost() + ":" + userSettings.getRazberryHttpClientConfig().getPort());
       container.connectToServer(this, endpointURI);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void logNoHandler(RazberryWsNotification razberryWsNotification) {
-    LOG.warn("No handler specified for {}", razberryWsNotification.getData().getSource());
+  private void logNoHandler(RazberryNotificationData razberryWsNotification) {
+    LOG.info("No handler specified for {}", razberryWsNotification.getSource());
+    LOG.info(razberryWsNotification.toString());
   }
 
-  private void bigBedBoxOpen(RazberryWsNotification razberryWsNotification) {
+  private void doNothing(RazberryNotificationData defaultNotificationHandler) {
+    //do nothing
+  }
+
+  private void bigBedBoxOpen(RazberryNotificationData razberryWsNotification) {
     LOG.info("Turning bed lights on!");
     bedboxRgbHttpClient.setBedBoxColor(RGBColor.white());
-
   }
 
-  private void bigBedBoxClose(RazberryWsNotification razberryWsNotification) {
-    LOG.info("Turning bed lights off!");
-    bedboxRgbHttpClient.setBedBoxColor(RGBColor.black());
+  private void hallMovement(RazberryNotificationData razberryWsNotification) {
+    LOG.info("Reporting movement");
+    mirrorHttpClient.reportMovement();
+  }
 
+  private void bigBedBoxClose(RazberryNotificationData razberryWsNotification) {
+    LOG.info("BedBox closed: Turning bed lights off!");
+    bedboxRgbHttpClient.setBedBoxColor(RGBColor.black());
+  }
+
+  private void hallNoMovement(RazberryNotificationData razberryWsNotification) {
+    LOG.info("No movement report!");
   }
 
   @OnOpen
@@ -98,15 +117,16 @@ public class RazberryWsClient extends TextWebSocketHandler {
 
   @OnMessage
   public void onMessage(final String message) {
-    String json = cleanupMessage(message);
-    LOG.info("WS message: " + json);
     ObjectMapper mapper = new ObjectMapper();
     try {
-      RazberryWsNotification notification = mapper.readValue(json, RazberryWsNotification.class);
-      final String deviceId = notification.getData().getSource();
-      handlers.getOrDefault(deviceId, defaultNotificationHandler).handleMessage(notification);
+      RazberryWsNotification notification = mapper.readValue(message, RazberryWsNotification.class);
+      RazberryNotificationData data = mapper.readValue(notification.getData(), RazberryNotificationData.class);
+      final String deviceId = data.getSource();
+      handlers.getOrDefault(deviceId, defaultNotificationHandler).handleMessage(data);
+
     } catch (IOException e) {
-      LOG.error("Could not parse ws message", e);
+      LOG.info("Could not parse ws message");
+      LOG.info(message);
     }
   }
 

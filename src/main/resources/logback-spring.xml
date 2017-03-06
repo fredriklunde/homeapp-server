@@ -11,10 +11,10 @@
     </appender>
 
     <appender name="dailyRollingFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>smartmirror.log</File>
+        <File>homeapp.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <FileNamePattern>smartmirror.%d{yyyy-MM-dd}.log</FileNamePattern>
+            <FileNamePattern>homeapp.%d{yyyy-MM-dd}.log</FileNamePattern>
 
             <!-- keep 30 days' worth of history -->
             <maxHistory>8</maxHistory>
@@ -25,7 +25,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.bernerus.smartmirror" additivity="false">
+    <logger name="com.bernerus.homeapp" additivity="false">
         <level value="INFO" />
         <appender-ref ref="dailyRollingFileAppender"/>
         <appender-ref ref="consoleAppender" />

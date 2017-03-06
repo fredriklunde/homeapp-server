@@ -1,5 +1,9 @@
 package com.bernerus.homeapp.model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+
 /**
  * Created by andreas on 21/02/17.
  */

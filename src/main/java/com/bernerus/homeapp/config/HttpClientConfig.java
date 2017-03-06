@@ -1,4 +1,4 @@
-package com.bernerus.homeapp.model;
+package com.bernerus.homeapp.config;
 
 /**
  * Created by andreas on 21/02/17.
@@ -14,6 +14,11 @@ public class HttpClientConfig {
     this.port = port;
     this.username = username;
     this.password = password;
+  }
+
+  public HttpClientConfig(String host, String port) {
+    this.host = host;
+    this.port = port;
   }
 
   public String getHost() {

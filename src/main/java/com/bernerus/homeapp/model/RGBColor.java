@@ -4,14 +4,18 @@ package com.bernerus.homeapp.model;
  * Created by andreas on 21/02/17.
  */
 public class RGBColor {
-  private final int red;
-  private final int green;
-  private final int blue;
+  private final double red;
+  private final double green;
+  private final double blue;
 
-  public RGBColor(int red, int green, int blue) {
-    this.red = red;
-    this.green = green;
-    this.blue = blue;
+  public RGBColor(double red, double green, double blue) {
+    this.red = rgbLimit(red);
+    this.green = rgbLimit(green);
+    this.blue = rgbLimit(blue);
+  }
+
+  private double rgbLimit(double color) {
+    return color > 255 ? 255 : color < 0 ? 0 : color;
   }
 
   public static RGBColor white() {
@@ -22,15 +26,19 @@ public class RGBColor {
     return new RGBColor(0, 0, 0);
   }
 
-  public int getRed() {
+  public static RGBColor of(final double r, final double g, final double b) {
+    return new RGBColor(r, g, b);
+  }
+
+  public double getRed() {
     return red;
   }
 
-  public int getGreen() {
+  public double getGreen() {
     return green;
   }
 
-  public int getBlue() {
+  public double getBlue() {
     return blue;
   }
 }
