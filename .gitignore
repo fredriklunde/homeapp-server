@@ -21,10 +21,9 @@ hs_err_pid*
 .idea/
 *.iml
 
-#generated webapp stuff
-src/main/webapp/components
-src/main/webapp/node
-src/main/webapp/node_modules
+# Logfiles
+homeapp.log
+homeapp.*.log
 
-smartmirror.log
-smartmirror.*.log
+# Application properties
+src/main/resources/application.properties
