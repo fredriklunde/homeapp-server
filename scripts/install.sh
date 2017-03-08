@@ -41,6 +41,8 @@ if [ "$?" -ne 0 ]; then
     exit 1
 fi
 
+read -p 'Server to upload to: ' mirrorserver
+
 exit 1
 
 ssh pi@rpi2 "mkdir -p ~/apps/homeapp"
