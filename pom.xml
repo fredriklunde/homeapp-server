@@ -15,8 +15,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>smartmirror</name>
-    <description>Home app server</description>
+    <name>HomeApp Server</name>
+    <description>Zwave listener, publisher and scheduler for home events.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

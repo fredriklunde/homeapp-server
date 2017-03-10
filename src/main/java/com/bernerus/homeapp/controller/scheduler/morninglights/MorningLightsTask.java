@@ -25,11 +25,10 @@ import static java.util.Objects.nonNull;
 public class MorningLightsTask implements ScheduledTask {
   private static final Logger LOG = LoggerFactory.getLogger(Scheduler.class);
 
-  RazberryRgbHttpClient razberryRgbHttpClient;
-  RGBColor currentColor = RGBColor.black();
-  MorningLightsPhase currentMorningLightsPhase = MorningLightsPhase.one();
+  private RazberryRgbHttpClient razberryRgbHttpClient;
+  private MorningLightsPhase currentMorningLightsPhase = MorningLightsPhase.one();
 
-  ScheduledExecutorService executor;
+  private ScheduledExecutorService executor;
 
   @Autowired
   public MorningLightsTask(UserSettings userSettings) {
@@ -49,28 +48,20 @@ public class MorningLightsTask implements ScheduledTask {
 
   public void run() {
     LOG.info("Running");
-    currentColor = nextColor();
-    razberryRgbHttpClient.setBedBoxColor(nextColor());
-    if (currentMorningLightsPhase.isDone(currentColor)) {
+    razberryRgbHttpClient.setBedBoxColor(currentMorningLightsPhase.nextColor());
+    if (currentMorningLightsPhase.isDone()) {
       if (currentMorningLightsPhase.getPhaseNumber() == 1) {
         executor.shutdown();
         executor = Executors.newScheduledThreadPool(1);
         currentMorningLightsPhase = MorningLightsPhase.two();
-        int phase2Dealy = 45 * 60 * 1000; // 45 mins delay
-        LOG.info("Morning script starting phase 2 in {} seconds", phase2Dealy / 1000);
-        executor.scheduleAtFixedRate(this::run, phase2Dealy, Math.round(currentMorningLightsPhase.getSleepTimeMs()), TimeUnit.MILLISECONDS);
+        int phase2Delay = 45 * 60 * 1000; // 45 mins delay
+        LOG.info("Morning script starting phase 2 in {} seconds", phase2Delay / 1000);
+        executor.scheduleAtFixedRate(this::run, phase2Delay, Math.round(currentMorningLightsPhase.getSleepTimeMs()), TimeUnit.MILLISECONDS);
       } else if (currentMorningLightsPhase.getPhaseNumber() > 1) {
         executor.shutdown();
         LOG.info("Morning script done!");
       }
     }
-  }
-
-  private RGBColor nextColor() {
-    final Double nextRed = currentColor.getRed() + currentMorningLightsPhase.getStepRed();
-    final Double nextGreen = currentColor.getGreen() + currentMorningLightsPhase.getStepGreen();
-    final Double nextBlue = currentColor.getBlue() + currentMorningLightsPhase.getStepBlue();
-    return RGBColor.of(nextRed, nextGreen, nextBlue);
   }
 
 

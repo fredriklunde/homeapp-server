@@ -1,3 +1,3 @@
 #!/bin/bash
-echo "Starting homeapp server!"
+echo "Starting HomeApp Server!"
 java -Xmx64m -jar homeapp-server.jar &

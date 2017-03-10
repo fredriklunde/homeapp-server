@@ -11,10 +11,9 @@ import org.slf4j.LoggerFactory;
 public class MorningLightsPhase implements Phase {
   private static final Logger LOG = LoggerFactory.getLogger(MorningLightsPhase.class);
 
-  private int phaseNumber = 1;
-  private final RGBColor startColor;
+  private final int phaseNumber;
   private final RGBColor endColor;
-  private final int durationSeconds;
+  private RGBColor currentColor;
   private final double stepRed;
   private final double stepGreen;
   private final double stepBlue;
@@ -23,15 +22,14 @@ public class MorningLightsPhase implements Phase {
 
   private MorningLightsPhase(final int phaseNumber, final RGBColor startColor, final RGBColor endColor, final int durationSeconds) {
     this.phaseNumber = phaseNumber;
-    this.startColor = startColor;
     this.endColor = endColor;
-    this.durationSeconds = durationSeconds;
+    this.currentColor = startColor;
 
     double requestsPerSecond = 1 / sleepTime;
 
     this.stepRed = (endColor.getRed() - startColor.getRed()) / (durationSeconds * requestsPerSecond);
-    this.stepGreen =  (endColor.getGreen() - startColor.getGreen()) / (durationSeconds * requestsPerSecond);
-    this.stepBlue =  (endColor.getBlue() - startColor.getBlue()) / (durationSeconds * requestsPerSecond);
+    this.stepGreen = (endColor.getGreen() - startColor.getGreen()) / (durationSeconds * requestsPerSecond);
+    this.stepBlue = (endColor.getBlue() - startColor.getBlue()) / (durationSeconds * requestsPerSecond);
     LOG.info("Step red=" + stepRed + ", step green=" + stepGreen + ", stepBlue=" + stepBlue);
   }
 
@@ -48,36 +46,20 @@ public class MorningLightsPhase implements Phase {
     return phaseNumber;
   }
 
-  public RGBColor getStartColor() {
-    return startColor;
-  }
-
-  public RGBColor getEndColor() {
-    return endColor;
-  }
-
-  public int getDurationSeconds() {
-    return durationSeconds;
-  }
-
-  public double getStepRed() {
-    return stepRed;
-  }
-
-  public double getStepGreen() {
-    return stepGreen;
-  }
-
-  public double getStepBlue() {
-    return stepBlue;
-  }
-
   public double getSleepTimeMs() {
     return sleepTime * 1000;
   }
 
+  public RGBColor nextColor() {
+    final Double nextRed = currentColor.getRed() + stepRed;
+    final Double nextGreen = currentColor.getGreen() + stepGreen;
+    final Double nextBlue = currentColor.getBlue() + stepBlue;
+    this.currentColor = RGBColor.of(nextRed, nextGreen, nextBlue);
+    return currentColor;
+  }
+
   @Override
-  public boolean isDone(final RGBColor currentColor) {
+  public boolean isDone() {
     final boolean redDone = isColorDone(stepRed, currentColor.getRed(), endColor.getRed());
     final boolean greenDone = isColorDone(stepGreen, currentColor.getGreen(), endColor.getGreen());
     final boolean blueDone = isColorDone(stepBlue, currentColor.getBlue(), endColor.getBlue());

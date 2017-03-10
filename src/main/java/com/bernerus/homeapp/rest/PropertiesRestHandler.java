@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /**
  * Created by andreas on 25/12/15.
  */
-@Controller
+//@Controller
 public class PropertiesRestHandler {
   private static final Logger LOG = LoggerFactory.getLogger(PropertiesRestHandler.class);
 

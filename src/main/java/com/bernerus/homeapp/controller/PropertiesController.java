@@ -10,7 +10,7 @@ import java.util.Properties;
 /**
  * Created by andreas on 2017-03-05.
  */
-@Component
+//@Component
 public class PropertiesController {
   private static final String APP_PROPERTIES = "application.properties";
   private static final String CUSTOM_PROPERTIES = "custom.application.properties";
