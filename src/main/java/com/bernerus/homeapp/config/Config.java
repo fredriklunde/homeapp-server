@@ -3,6 +3,7 @@ package com.bernerus.homeapp.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -11,6 +12,7 @@ import org.springframework.core.env.Environment;
  * Created by andreas on 2017-02-27.
  */
 @Configuration
+@EnableAutoConfiguration
 public class Config {
   private static final Logger LOG = LoggerFactory.getLogger(Config.class);
 

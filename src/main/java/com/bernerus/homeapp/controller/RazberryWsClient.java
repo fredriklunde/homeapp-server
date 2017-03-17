@@ -71,7 +71,7 @@ public class RazberryWsClient extends TextWebSocketHandler {
       URI endpointURI = URI.create("ws://" + userSettings.getRazberryHttpClientConfig().getHost() + ":" + userSettings.getRazberryHttpClientConfig().getPort());
       container.connectToServer(this, endpointURI);
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      LOG.error("Could not connect to websocket. Re-initialize when config is set!");
     }
   }
 
