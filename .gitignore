@@ -27,3 +27,9 @@ homeapp.*.log
 
 # Application properties
 src/main/resources/application.properties
+
+# Generated frontend build
+src/main/resources/static/*
+
+# Frontend node Shit
+node_modules

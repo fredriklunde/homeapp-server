@@ -16,7 +16,7 @@ public class RazberryRgbHttpClient extends RazberryHttpClient {
     super(clientConfig, deviceId);
   }
 
-  public void setBedBoxColor(RGBColor color) {
+  public void setColor(RGBColor color) {
     String red = String.valueOf(color.getRed());
     String green = String.valueOf(color.getGreen());
     String blue = String.valueOf(color.getBlue());

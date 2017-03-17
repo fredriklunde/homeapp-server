@@ -1,6 +1,6 @@
-package com.bernerus.homeapp.controller.scheduler;
+package com.bernerus.homeapp.controller.tasks;
 
-import com.bernerus.homeapp.controller.scheduler.morninglights.MorningLightsTask;
+import com.bernerus.homeapp.controller.tasks.morninglights.MorningLightsTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,13 +35,13 @@ public class Scheduler {
   public void scheduleTaskUsingCronExpression() {
     long now = System.currentTimeMillis() / 1000;
     LOG.info("Running morning script - " + now);
-    morningLightsTask.start();
+    morningLightsTask.execute();
   }
 
   @Scheduled(cron = "${lights.morning.cron.weekend}")
   public void scheduleTaskUsingCronExpressionWeekend() {
     long now = System.currentTimeMillis() / 1000;
     LOG.info("Running morning script - " + now);
-    morningLightsTask.start();
+    morningLightsTask.execute();
   }
 }

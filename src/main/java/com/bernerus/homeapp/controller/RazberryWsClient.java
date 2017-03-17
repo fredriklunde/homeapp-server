@@ -3,6 +3,7 @@ package com.bernerus.homeapp.controller;
 import com.bernerus.homeapp.config.UserSettings;
 import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
 import com.bernerus.homeapp.controller.http.SmartMirrorHttpClient;
+import com.bernerus.homeapp.controller.tasks.HallLightsTask;
 import com.bernerus.homeapp.model.NoptificationHandlerHashMap;
 import com.bernerus.homeapp.model.RGBColor;
 import com.bernerus.homeapp.model.RazberryNotificationData;
@@ -36,6 +37,7 @@ import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_W;
 import static com.bernerus.homeapp.config.Config.BEDBOX_RGB_LIGHTS;
 import static com.bernerus.homeapp.config.Config.BIG_BEDBOX_SENSOR;
 import static com.bernerus.homeapp.config.Config.HALL_MOVEMENT_SENSOR;
+import static com.bernerus.homeapp.config.Config.HALL_RGB_LIGHTS;
 
 /**
  * Created by andreas on 21/02/17.
@@ -45,18 +47,23 @@ import static com.bernerus.homeapp.config.Config.HALL_MOVEMENT_SENSOR;
 public class RazberryWsClient extends TextWebSocketHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RazberryWsClient.class);
   private final SmartMirrorHttpClient mirrorHttpClient;
+  private final HallLightsTask hallLightsTask;
   private Session userSession = null;
   private NoptificationHandlerHashMap handlers = new NoptificationHandlerHashMap();
   private DefaultNotificationHandler defaultNotificationHandler = new DefaultNotificationHandler(this::logNoHandler);
   private RazberryRgbHttpClient bedboxRgbHttpClient;
+  private RazberryRgbHttpClient hallRgbHttpClient;
   private UserSettings userSettings;
 
   @Autowired
-  public RazberryWsClient(UserSettings userSettings) {
+  public RazberryWsClient(UserSettings userSettings, HallLightsTask hallLightsTask) {
     this.userSettings = userSettings;
 
     this.mirrorHttpClient = new SmartMirrorHttpClient(userSettings.getMirrorHttpClientConfig());
     this.bedboxRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
+    this.hallRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), HALL_RGB_LIGHTS);
+
+    this.hallLightsTask = hallLightsTask;
 
     handlers.put(BIG_BEDBOX_SENSOR, new BinaryNotificationHandler(this::bigBedBoxOpen, this::bigBedBoxClose));
     handlers.put(HALL_MOVEMENT_SENSOR, new BinaryNotificationHandler(this::hallMovement, this::hallNoMovement));
@@ -86,21 +93,23 @@ public class RazberryWsClient extends TextWebSocketHandler {
 
   private void bigBedBoxOpen(RazberryNotificationData razberryWsNotification) {
     LOG.info("Turning bed lights on!");
-    bedboxRgbHttpClient.setBedBoxColor(RGBColor.white());
+    bedboxRgbHttpClient.setColor(RGBColor.white());
+  }
+
+  private void bigBedBoxClose(RazberryNotificationData razberryWsNotification) {
+    LOG.info("BedBox closed: Turning bed lights off!");
+    bedboxRgbHttpClient.setColor(RGBColor.black());
   }
 
   private void hallMovement(RazberryNotificationData razberryWsNotification) {
     LOG.info("Reporting movement");
     mirrorHttpClient.reportMovement();
-  }
-
-  private void bigBedBoxClose(RazberryNotificationData razberryWsNotification) {
-    LOG.info("BedBox closed: Turning bed lights off!");
-    bedboxRgbHttpClient.setBedBoxColor(RGBColor.black());
+    hallLightsTask.reportMovement();
   }
 
   private void hallNoMovement(RazberryNotificationData razberryWsNotification) {
     LOG.info("No movement report!");
+    hallLightsTask.reportNoMovement();
   }
 
   @OnOpen

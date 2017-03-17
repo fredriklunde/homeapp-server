@@ -1,6 +1,6 @@
-package com.bernerus.homeapp.controller.scheduler.morninglights;
+package com.bernerus.homeapp.controller.tasks.morninglights;
 
-import com.bernerus.homeapp.controller.scheduler.Phase;
+import com.bernerus.homeapp.controller.tasks.Phase;
 import com.bernerus.homeapp.model.RGBColor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,11 @@ public class MorningLightsPhase implements Phase {
   }
 
   public static MorningLightsPhase two() {
-    return new MorningLightsPhase(2, RGBColor.of(255, 80, 0), RGBColor.of(255, 255, 255), 60 * 7);
+    return new MorningLightsPhase(2, RGBColor.of(255, 80, 0), RGBColor.white(), 60 * 7);
+  }
+
+  public static MorningLightsPhase three() {
+    return new MorningLightsPhase(3, RGBColor.white(), RGBColor.black(), 1);
   }
 
   @Override

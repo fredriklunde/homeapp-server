@@ -1,6 +1,6 @@
 package com.bernerus.homeapp.rest;
 
-import com.bernerus.homeapp.controller.scheduler.morninglights.MorningLightsTask;
+import com.bernerus.homeapp.controller.tasks.morninglights.MorningLightsTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +18,10 @@ public class TaskExecutorRestHandler {
   @Autowired
   MorningLightsTask morningLightsTask;
 
-  @RequestMapping("/start/morninglights")
+  @RequestMapping("/reportMovement/morninglights")
   public @ResponseBody String setMessage() {
     LOG.info("Executing morning lights task.");
-    morningLightsTask.start();
+    morningLightsTask.execute();
     return "Ok";
   }
 

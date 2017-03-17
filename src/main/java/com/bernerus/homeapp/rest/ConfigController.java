@@ -1,4 +1,4 @@
-package com.bernerus.homeapp.controller;
+package com.bernerus.homeapp.rest;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;

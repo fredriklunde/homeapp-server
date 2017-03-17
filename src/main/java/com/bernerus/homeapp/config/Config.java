@@ -18,6 +18,8 @@ public class Config {
 
   public static final String BIG_BEDBOX_SENSOR = "ZWayVDev_zway_5-0-48-1";
   public static final String HALL_MOVEMENT_SENSOR = "ZWayVDev_zway_12-0-113-7-8-A";
+  public static final String HALL_RGB_LIGHTS = "ZWayVDev_zway_13-0-51-rgb";
+
   public static final String BEDBOX_RGB_LIGHTS = "ZWayVDev_zway_11-0-51-rgb";
   public static final String BEDBOX_DIMMER_0 = "ZWayVDev_zway_11-0-38";
   public static final String BEDBOX_DIMMER_1 = "ZWayVDev_zway_11-1-38";
