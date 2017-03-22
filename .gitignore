@@ -21,15 +21,19 @@ hs_err_pid*
 .idea/
 *.iml
 
+#vs code
+.vscode
+
 # Logfiles
 homeapp.log
 homeapp.*.log
+npm-debug.log
 
 # Application properties
 src/main/resources/application.properties
 
 # Generated frontend build
-src/main/resources/static/*
+src/main/resources/static
 
 # Frontend node Shit
 node_modules
