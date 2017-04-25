@@ -1,10 +1,13 @@
 package com.bernerus.homeapp.controller;
 
 import com.bernerus.homeapp.config.UserSettings;
-import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
+import com.bernerus.homeapp.config.zconfig.ZwaveConfig;
+import com.bernerus.homeapp.controller.device.DeviceControllerFactory;
+import com.bernerus.homeapp.controller.device.UnknownDeviceController;
+import com.bernerus.homeapp.controller.device.ZwaveDeviceController;
+import com.bernerus.homeapp.controller.http.RazberryRgbwHttpClient;
 import com.bernerus.homeapp.controller.http.SmartMirrorHttpClient;
 import com.bernerus.homeapp.controller.tasks.HallLightsTask;
-import com.bernerus.homeapp.model.NoptificationHandlerHashMap;
 import com.bernerus.homeapp.model.RGBColor;
 import com.bernerus.homeapp.model.RazberryNotificationData;
 import com.bernerus.homeapp.model.RazberryWsNotification;
@@ -26,18 +29,13 @@ import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_0;
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_3;
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_B;
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_1;
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_2;
-import static com.bernerus.homeapp.config.Config.BEDBOX_DIMMER_W;
 import static com.bernerus.homeapp.config.Config.BEDBOX_RGB_LIGHTS;
-import static com.bernerus.homeapp.config.Config.BIG_BEDBOX_SENSOR;
-import static com.bernerus.homeapp.config.Config.HALL_MOVEMENT_SENSOR;
-import static com.bernerus.homeapp.config.Config.HALL_RGB_LIGHTS;
+import static java.util.Objects.nonNull;
 
 /**
  * Created by andreas on 21/02/17.
@@ -49,26 +47,56 @@ public class RazberryWsClient extends TextWebSocketHandler {
   private final SmartMirrorHttpClient mirrorHttpClient;
   private final HallLightsTask hallLightsTask;
   private Session userSession = null;
-  private NoptificationHandlerHashMap handlers = new NoptificationHandlerHashMap();
-  private DefaultNotificationHandler defaultNotificationHandler = new DefaultNotificationHandler(this::logNoHandler);
-  private RazberryRgbHttpClient bedboxRgbHttpClient;
-  private RazberryRgbHttpClient hallRgbHttpClient;
+  private RazberryRgbwHttpClient bedboxRgbHttpClient;
   private UserSettings userSettings;
+  private final Pattern deviceIdPattern;
+  private final DeviceControllerFactory deviceControllerFactory;
+
+  private Map<String, ZwaveDeviceController> deviceControllers = new HashMap<>();
 
   @Autowired
-  public RazberryWsClient(UserSettings userSettings, HallLightsTask hallLightsTask) {
+  public RazberryWsClient(UserSettings userSettings, ZwaveConfig zwaveZwaveConfig, HallLightsTask hallLightsTask, DeviceControllerFactory deviceControllerFactory) {
     this.userSettings = userSettings;
+    this.deviceControllerFactory = deviceControllerFactory;
 
     this.mirrorHttpClient = new SmartMirrorHttpClient(userSettings.getMirrorHttpClientConfig());
-    this.bedboxRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
-    this.hallRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), HALL_RGB_LIGHTS);
+    this.bedboxRgbHttpClient = new RazberryRgbwHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
 
     this.hallLightsTask = hallLightsTask;
 
-    handlers.put(BIG_BEDBOX_SENSOR, new BinaryNotificationHandler(this::bigBedBoxOpen, this::bigBedBoxClose));
-    handlers.put(HALL_MOVEMENT_SENSOR, new BinaryNotificationHandler(this::hallMovement, this::hallNoMovement));
-    handlers.put(Arrays.asList(BEDBOX_DIMMER_0, BEDBOX_DIMMER_1, BEDBOX_DIMMER_2, BEDBOX_DIMMER_3, BEDBOX_DIMMER_B, BEDBOX_DIMMER_W),
-      new DefaultNotificationHandler(this::doNothing));
+    registerDevices(zwaveZwaveConfig);
+
+    //Setup pattern for deviceId
+    String deviceIdRegex = "(ZWayVDev[^\\-]*)-.*";
+    deviceIdPattern = Pattern.compile(deviceIdRegex);
+  }
+
+  private void registerDevices(ZwaveConfig zwaveZwaveConfig) {
+    //Create deviceControllers
+    zwaveZwaveConfig.getDevices().values().forEach(deviceConfig -> {
+      ZwaveDeviceController deviceController = deviceControllerFactory.createZwaveDevice(deviceConfig);
+      deviceControllers.put(deviceConfig.getId(), deviceController);
+    });
+
+    //Add targets
+    zwaveZwaveConfig.getDevices().values().forEach(deviceConfig -> {
+      ZwaveDeviceController deviceController = deviceControllers.get(deviceConfig.getId());
+      Map<String, ZwaveDeviceController> eventTargets = new HashMap<>();
+      deviceConfig.getEvents()
+        .forEach(eventConfig -> {
+          eventConfig.getActions().forEach(actionConfig -> {
+            ZwaveDeviceController targetDeviceController = deviceControllers.get(actionConfig.getTarget());
+            if (nonNull(targetDeviceController)) {
+              eventTargets.putIfAbsent(eventConfig.getId(), targetDeviceController);
+            }
+          });
+        });
+      deviceController.setTargets(eventTargets);
+      eventTargets.values().forEach(target -> {
+        target.addCaller(deviceController);
+
+      });
+    });
   }
 
   @PostConstruct
@@ -85,10 +113,6 @@ public class RazberryWsClient extends TextWebSocketHandler {
   private void logNoHandler(RazberryNotificationData razberryWsNotification) {
     LOG.info("No handler specified for {}", razberryWsNotification.getSource());
     LOG.info(razberryWsNotification.toString());
-  }
-
-  private void doNothing(RazberryNotificationData defaultNotificationHandler) {
-    //do nothing
   }
 
   private void bigBedBoxOpen(RazberryNotificationData razberryWsNotification) {
@@ -130,19 +154,23 @@ public class RazberryWsClient extends TextWebSocketHandler {
     try {
       RazberryWsNotification notification = mapper.readValue(message, RazberryWsNotification.class);
       RazberryNotificationData data = mapper.readValue(notification.getData(), RazberryNotificationData.class);
-      final String deviceId = data.getSource();
-      handlers.getOrDefault(deviceId, defaultNotificationHandler).handleMessage(data);
+      Matcher deviceIdMatcher = deviceIdPattern.matcher(data.getSource());
+      if (deviceIdMatcher.matches()) {
+        String deviceIdShort = deviceIdMatcher.group(1);
+        if (deviceControllers.containsKey(deviceIdShort)) {
+          deviceControllers.get(deviceIdShort).handleNotification(data);
+        } else {
+          LOG.warn("No device with id '{}' has been registered. Registering an unknown device", deviceIdShort);
+          UnknownDeviceController unknownDevice = deviceControllerFactory.createUnknownDeviceController(deviceIdShort);
+          deviceControllers.put(deviceIdShort, unknownDevice);
+        }
+      } else {
+        LOG.warn("Bad regex for: {}", data.getSource());
+      }
 
     } catch (IOException e) {
       LOG.info("Could not parse ws message");
       LOG.info(message);
     }
-  }
-
-  private String cleanupMessage(String message) {
-    String clean = message.replaceAll("\\\\\"", "\"");
-    clean = clean.replaceAll("\"\\{", "{");
-    clean = clean.replaceAll("}\"", "}");
-    return clean;
   }
 }

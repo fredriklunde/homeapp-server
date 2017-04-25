@@ -1,0 +1,20 @@
+,
+"ZWayVDev_zway_12": {
+"name": "HALL_MOVEMENT_SENSOR",
+"id": "ZWayVDev_zway_12",
+"type": "EYE_SENSOR",
+"notificationHandler": {
+"name": "EyeNotificationHandler",
+"events": [
+{
+"name": "Movement",
+"id": "0-113-7-A",
+"type": "sensor",
+"action": {
+"target": "ZWayVDev_zway_13",
+"function": "scheduleWhite"
+}
+}
+]
+}
+}

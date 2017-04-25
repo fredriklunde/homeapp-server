@@ -1,8 +1,9 @@
 package com.bernerus.homeapp.controller.tasks;
 
 import com.bernerus.homeapp.config.UserSettings;
-import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
+import com.bernerus.homeapp.controller.http.RazberryRgbwHttpClient;
 import com.bernerus.homeapp.model.RGBColor;
+import com.bernerus.homeapp.model.state.HallLights;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,12 +26,13 @@ public class HallLightsTask extends ScheduledTask {
   protected ScheduledExecutorService timeoutExecutor;
 
 
-  private RazberryRgbHttpClient razberryRgbHttpClient;
-  private boolean hallLightsOn = false;
+  private RazberryRgbwHttpClient razberryRgbwHttpClient;
+  private HallLights hallLights;
 
   @Autowired
-  public HallLightsTask(UserSettings userSettings) {
-    razberryRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), HALL_RGB_LIGHTS);
+  public HallLightsTask(UserSettings userSettings, HallLights hallLights) {
+    razberryRgbwHttpClient = new RazberryRgbwHttpClient(userSettings.getRazberryHttpClientConfig(), HALL_RGB_LIGHTS);
+    this.hallLights = hallLights;
   }
 
   @Override
@@ -44,7 +46,8 @@ public class HallLightsTask extends ScheduledTask {
   }
 
   public void reportMovement() {
-    if (!hallLightsOn) {
+    RGBColor currentColor = razberryRgbwHttpClient.getCurrentColor();
+    if (currentColor.equals(RGBColor.black())) {
       lightsOn();
       LOG.info("Hall lights is now on. Scheduling off timeout in 5 minutes");
     } else {
@@ -57,8 +60,8 @@ public class HallLightsTask extends ScheduledTask {
 
   public void reportNoMovement() {
     offExecutor = resetExecutor(offExecutor);
-
-    if (hallLightsOn) {
+    RGBColor currentColor = razberryRgbwHttpClient.getCurrentColor();
+    if (!currentColor.equals(RGBColor.black())) {
       LOG.info("Scheduling hall lights off in 60 seconds");
       offExecutor = resetExecutor(offExecutor);
       offExecutor.scheduleWithFixedDelay(this::lightsOff, 60L, 10, TimeUnit.SECONDS);
@@ -71,17 +74,16 @@ public class HallLightsTask extends ScheduledTask {
 
   public void lightsOn() {
     LocalTime currentTime = LocalTime.now();
-    if (currentTime.isAfter(LocalTime.of(9, 0)) && currentTime.isBefore(LocalTime.of(20, 0))) {
+    if (currentTime.isAfter(LocalTime.of(9, 0)) && currentTime.isBefore(LocalTime.of(19, 30))) {
       //Full lights
-      razberryRgbHttpClient.setColor(RGBColor.white());
-    } else if (currentTime.isBefore(LocalTime.of(6, 0))) {
+      razberryRgbwHttpClient.setColor(RGBColor.white());
+    } else if (currentTime.isAfter(LocalTime.of(21, 30)) && currentTime.isBefore(LocalTime.of(7, 0))) {
       // Night time
-      razberryRgbHttpClient.setColor(RGBColor.of(80, 60, 10));
+      razberryRgbwHttpClient.setColor(RGBColor.of(80, 60, 10));
     } else {
       // Morning/Evening
-      razberryRgbHttpClient.setColor(RGBColor.of(255, 140, 60));
+      razberryRgbwHttpClient.setColor(RGBColor.of(255, 140, 60));
     }
-    hallLightsOn = true;
   }
 
   public void lightsOff() {
@@ -89,8 +91,7 @@ public class HallLightsTask extends ScheduledTask {
     offExecutor = resetExecutor(offExecutor);
     timeoutExecutor = resetExecutor(timeoutExecutor);
 
-    razberryRgbHttpClient.setColor(RGBColor.black());
-    hallLightsOn = false;
+    razberryRgbwHttpClient.setColor(RGBColor.black());
   }
 
 

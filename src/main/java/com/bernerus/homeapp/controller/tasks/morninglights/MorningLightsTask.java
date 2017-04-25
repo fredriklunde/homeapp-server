@@ -1,7 +1,7 @@
 package com.bernerus.homeapp.controller.tasks.morninglights;
 
 import com.bernerus.homeapp.config.UserSettings;
-import com.bernerus.homeapp.controller.http.RazberryRgbHttpClient;
+import com.bernerus.homeapp.controller.http.RazberryRgbwHttpClient;
 import com.bernerus.homeapp.controller.tasks.Phase;
 import com.bernerus.homeapp.controller.tasks.ScheduledTask;
 import com.bernerus.homeapp.controller.tasks.Scheduler;
@@ -21,13 +21,13 @@ import static com.bernerus.homeapp.config.Config.BEDBOX_RGB_LIGHTS;
 public class MorningLightsTask extends ScheduledTask {
   private static final Logger LOG = LoggerFactory.getLogger(Scheduler.class);
 
-  private RazberryRgbHttpClient razberryRgbHttpClient;
+  private RazberryRgbwHttpClient razberryRgbwHttpClient;
   private MorningLightsPhase currentMorningLightsPhase = MorningLightsPhase.one();
 
 
   @Autowired
   public MorningLightsTask(UserSettings userSettings) {
-    razberryRgbHttpClient = new RazberryRgbHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
+    razberryRgbwHttpClient = new RazberryRgbwHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
   }
 
   @Override
@@ -39,7 +39,7 @@ public class MorningLightsTask extends ScheduledTask {
 
   public void run() {
     LOG.info("Running");
-    razberryRgbHttpClient.setColor(currentMorningLightsPhase.nextColor());
+    razberryRgbwHttpClient.setColor(currentMorningLightsPhase.nextColor());
     if (currentMorningLightsPhase.isDone()) {
       switch (currentMorningLightsPhase.getPhaseNumber()) {
         case Phase.ONE:
