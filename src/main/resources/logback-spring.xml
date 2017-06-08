@@ -16,8 +16,8 @@
             <!-- daily rollover -->
             <FileNamePattern>homeapp.%d{yyyy-MM-dd}.log</FileNamePattern>
 
-            <!-- keep 30 days' worth of history -->
-            <maxHistory>8</maxHistory>
+            <!-- keep 2 days' worth of history -->
+            <maxHistory>2</maxHistory>
         </rollingPolicy>
 
         <encoder>

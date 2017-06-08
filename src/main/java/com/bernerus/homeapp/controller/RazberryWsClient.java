@@ -46,57 +46,27 @@ public class RazberryWsClient extends TextWebSocketHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RazberryWsClient.class);
   private final SmartMirrorHttpClient mirrorHttpClient;
   private final HallLightsTask hallLightsTask;
+  @SuppressWarnings("unused")
   private Session userSession = null;
   private RazberryRgbwHttpClient bedboxRgbHttpClient;
   private UserSettings userSettings;
   private final Pattern deviceIdPattern;
-  private final DeviceControllerFactory deviceControllerFactory;
+  private final DeviceRegistry deviceRegistry;
 
-  private Map<String, ZwaveDeviceController> deviceControllers = new HashMap<>();
 
   @Autowired
-  public RazberryWsClient(UserSettings userSettings, ZwaveConfig zwaveZwaveConfig, HallLightsTask hallLightsTask, DeviceControllerFactory deviceControllerFactory) {
+  public RazberryWsClient(UserSettings userSettings, HallLightsTask hallLightsTask, DeviceRegistry deviceRegistry) {
     this.userSettings = userSettings;
-    this.deviceControllerFactory = deviceControllerFactory;
+    this.deviceRegistry = deviceRegistry;
 
     this.mirrorHttpClient = new SmartMirrorHttpClient(userSettings.getMirrorHttpClientConfig());
     this.bedboxRgbHttpClient = new RazberryRgbwHttpClient(userSettings.getRazberryHttpClientConfig(), BEDBOX_RGB_LIGHTS);
 
     this.hallLightsTask = hallLightsTask;
 
-    registerDevices(zwaveZwaveConfig);
-
     //Setup pattern for deviceId
     String deviceIdRegex = "(ZWayVDev[^\\-]*)-.*";
     deviceIdPattern = Pattern.compile(deviceIdRegex);
-  }
-
-  private void registerDevices(ZwaveConfig zwaveZwaveConfig) {
-    //Create deviceControllers
-    zwaveZwaveConfig.getDevices().values().forEach(deviceConfig -> {
-      ZwaveDeviceController deviceController = deviceControllerFactory.createZwaveDevice(deviceConfig);
-      deviceControllers.put(deviceConfig.getId(), deviceController);
-    });
-
-    //Add targets
-    zwaveZwaveConfig.getDevices().values().forEach(deviceConfig -> {
-      ZwaveDeviceController deviceController = deviceControllers.get(deviceConfig.getId());
-      Map<String, ZwaveDeviceController> eventTargets = new HashMap<>();
-      deviceConfig.getEvents()
-        .forEach(eventConfig -> {
-          eventConfig.getActions().forEach(actionConfig -> {
-            ZwaveDeviceController targetDeviceController = deviceControllers.get(actionConfig.getTarget());
-            if (nonNull(targetDeviceController)) {
-              eventTargets.putIfAbsent(eventConfig.getId(), targetDeviceController);
-            }
-          });
-        });
-      deviceController.setTargets(eventTargets);
-      eventTargets.values().forEach(target -> {
-        target.addCaller(deviceController);
-
-      });
-    });
   }
 
   @PostConstruct
@@ -153,16 +123,17 @@ public class RazberryWsClient extends TextWebSocketHandler {
     ObjectMapper mapper = new ObjectMapper();
     try {
       RazberryWsNotification notification = mapper.readValue(message, RazberryWsNotification.class);
+//      LOG.info(notification.getData());
       RazberryNotificationData data = mapper.readValue(notification.getData(), RazberryNotificationData.class);
       Matcher deviceIdMatcher = deviceIdPattern.matcher(data.getSource());
       if (deviceIdMatcher.matches()) {
         String deviceIdShort = deviceIdMatcher.group(1);
-        if (deviceControllers.containsKey(deviceIdShort)) {
-          deviceControllers.get(deviceIdShort).handleNotification(data);
+        if (deviceRegistry.getDeviceControllers().containsKey(deviceIdShort)) {
+          deviceRegistry.getDeviceControllers().get(deviceIdShort).handleNotification(data);
         } else {
           LOG.warn("No device with id '{}' has been registered. Registering an unknown device", deviceIdShort);
-          UnknownDeviceController unknownDevice = deviceControllerFactory.createUnknownDeviceController(deviceIdShort);
-          deviceControllers.put(deviceIdShort, unknownDevice);
+          UnknownDeviceController unknownDevice = deviceRegistry.createUnknownDeviceController(deviceIdShort);
+          deviceRegistry.getDeviceControllers().put(deviceIdShort, unknownDevice);
         }
       } else {
         LOG.warn("Bad regex for: {}", data.getSource());

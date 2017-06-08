@@ -27,15 +27,8 @@ public class Config {
   public static final String BIG_BEDBOX_SENSOR = "ZWayVDev_zway_5-0-48-1";
   public static final String HALL_MOVEMENT_SENSOR = "ZWayVDev_zway_12-0-113-7-8-A";
   public static final String HALL_RGB_LIGHTS = "ZWayVDev_zway_13-0-51-rgb";
-  public static final String HALL_RGB_LIGHTS_0 = "ZWayVDev_zway_13-0-51-0";
 
-  public static final String HALL_WALL_MOTE = "ZWayVDev_zway_14-0-91-DS";
-  public static final String HALL_WALL_MOTE_BUTTON_1 = "ZWayVDev_zway_Remote_14-0-0-1-S";
-  public static final String HALL_WALL_MOTE_BUTTON_2 = "ZWayVDev_zway_Remote_14-0-0-2-S";
-  public static final String HALL_WALL_MOTE_BUTTON_3 = "ZWayVDev_zway_Remote_14-0-0-3-S";
-  public static final String HALL_WALL_MOTE_BUTTON_4 = "ZWayVDev_zway_Remote_14-0-0-4-S";
-
-  public static final String BEDBOX_RGB_LIGHTS = "ZWayVDev_zway_11-0-51-rgb";
+  public static final String BEDBOX_RGB_LIGHTS = "ZWayVDev_zway_11";
 
   @Autowired
   Environment env;
