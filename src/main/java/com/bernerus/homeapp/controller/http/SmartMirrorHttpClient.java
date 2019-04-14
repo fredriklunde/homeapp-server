@@ -27,7 +27,7 @@ public class SmartMirrorHttpClient extends HttpClient {
   }
 
   public void reportMovement() {
-
+    LOG.info("Report movement endpoint called!");
     String url = "/reportmovement";
 
     HttpEntity<String> response = get(url, String.class);
@@ -35,7 +35,7 @@ public class SmartMirrorHttpClient extends HttpClient {
     try {
       LOG.info(response.getBody());
     } catch (Exception e) {
-      LOG.error("Kass", e);
+      LOG.error("Error, Error:", e);
     }
   }
 

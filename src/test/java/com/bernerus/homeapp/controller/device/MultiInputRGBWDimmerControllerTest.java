@@ -20,8 +20,8 @@ public class MultiInputRGBWDimmerControllerTest {
 
   @Before
   public void setUp() throws Exception {
-    HttpClientConfig razberryHttpClientConfig = new HttpClientConfig("192.168.1.2", "8083", "appz", "zW4yAppz#i0s");
-    HttpClientConfig mirrorHttpClientConfig = new HttpClientConfig("192.168.1.18", "18080");
+    HttpClientConfig razberryHttpClientConfig = new HttpClientConfig("192.168.0.15", "8083", "admin", "hjartum1");
+    HttpClientConfig mirrorHttpClientConfig = new HttpClientConfig("192.168.0.15", "18080");
     UserSettings userSettings = new UserSettings(mirrorHttpClientConfig, razberryHttpClientConfig);
     DeviceRegistry deviceRegistry = new DeviceRegistry(new DeviceControllerFactory(userSettings));
 
